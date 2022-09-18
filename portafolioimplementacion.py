@@ -21,15 +21,6 @@ import pandas as pd, matplotlib.pyplot as plt, numpy as np, seaborn as sns
 
 # Importación de datos 
 
-columns = ["ID",
-           "Transaction date",
-           "House age",
-           "Distance to MRT Station",
-           "Convenience stores",
-           "Latitude",
-           "Longitude",
-           "House price"]
-
 df = pd.read_csv("Fish.csv")
 
 df
