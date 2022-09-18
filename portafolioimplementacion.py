@@ -13,23 +13,95 @@ Ariadna Jocelyn Guzmán Jiménez A01749373
 "Implementación de refinamiento de modelos"
 '''
 
+"""# Lectura de datos"""
+
 # Librerias 
 
-import pandas as pd, matplotlib.pyplot as plt
+import pandas as pd, matplotlib.pyplot as plt, numpy as np, seaborn as sns
 
 # Importación de datos 
 
-columns = ["sepal length","sepal width","petal length","petal width", "class"]
-df = pd.read_csv("iris.data", names = columns)
+columns = ["ID",
+           "Transaction date",
+           "House age",
+           "Distance to MRT Station",
+           "Convenience stores",
+           "Latitude",
+           "Longitude",
+           "House price"]
 
-x= df["sepal length"]
-y= df["sepal width"]
+df = pd.read_csv("Fish.csv")
 
-n = len(x)
+df
+
+"""# Entendimiento de los datos"""
+
+# Numero de filas y columnas    
+df.shape
+
+# Informacion del dataframe
+df.info()
+
+# Análisis estadístico
+df.describe()
+
+# Visualización de datos
+
+# Height vs Weight
+sns.barplot(data=df, x="Height", y="Weight")
+plt.title("Height vs Weight")
+plt.show()
+
+# Width vs Weight
+sns.barplot(data=df, x="Width", y="Weight")
+plt.title("Width vs Weight")
+plt.show()
+
+# Length1 vs Weight
+sns.barplot(data=df, x="Length1", y="Weight")
+plt.title("Length1 vs Weight")
+plt.show()
+
+# Length2 vs Weight
+sns.barplot(data=df, x="Length2", y="Weight")
+plt.title("Length2 vs Weight")
+plt.show()
+
+# Length3 vs Weight
+sns.barplot(data=df, x="Length3", y="Weight")
+plt.title("Length3 vs Weight")
+plt.show()
+
+# Matriz de correlacion
+corr_df = df.corr(method='pearson')
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(corr_df, annot=True)
+plt.show()
+
+"""# Tratamiento de los datos"""
+
+# Checar la existencia de datos nulos
+df.isna().sum()
+
+# Separacion en X y Y
+x= df["Width"]
+
+y= df["Weight"]
+
+# Dividir el dataset 
+from sklearn.model_selection import train_test_split
+
+# Modelo prueba 20% y entrenamiento 80%
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3, random_state = 0)
+
+"""# Pruebas
+
+*Se va cambiando el número de iteraciones entre cada una de las funciones*
+"""
 
 theta = [1,1]
 alpha = 0.0001
-iterations = 100000
 
 def h0(x, theta):
   '''
@@ -38,20 +110,33 @@ def h0(x, theta):
   return theta[0] + theta[1] * x
 
 
+def accuracy(estimated, prediction):
+  '''
+  Calculo del score de precisión del modelo
+  '''
+  correlation_matrix = np.corrcoef(estimated, prediction)
+  correlation = correlation_matrix[0,1]
+  r_squared = correlation**2
+  return(r_squared)
 
-def linearRegression(iterations, theta, alpha):
+
+def linearRegression(x, y, iterations, theta, alpha):
   '''
   Funcion que realiza el metodo de regresion lineal
   con gradiente descendiente
   '''
-  
+  n = len(x)
+
   i = iterations
   while (i != 0):
 
     all_h0 = []
     delta = []
     deltaX = []
+    all_x = []
+
     for xi, yi in zip(x,y):
+      all_x.append(xi)
       all_h0.append(h0(xi, theta)) #h0
       delta.append(h0(xi, theta) - yi)  #h0-y
       deltaX.append((h0(xi, theta) - yi) * xi) #(h0-y) * x
@@ -60,19 +145,59 @@ def linearRegression(iterations, theta, alpha):
     theta[0] = theta[0] - alpha/n * sum(delta)
     theta[1] = theta[1] - alpha/n * sum(deltaX)
 
+  score = accuracy(y, all_h0)
   print("Predicción\n", all_h0)
   print("\nDelta\n", delta)
   print("\nDeltaX\n", deltaX)
   print("\nTheta actualizada después de {} iteraciones \n".format(iterations), theta)
+  print("\nScore\n", score)
+  print("\n")
   plt.plot(x, all_h0, color="#C6E5B1")
   plt.scatter(x,y,marker=".", color="#F7D917")
-  plt.title("Sepal width vs sepal length iris species")
-  plt.xlabel("Sepal length")
-  plt.ylabel("Sepal width")
+  plt.title("Width vs Weight")
+  plt.xlabel("Width")
+  plt.ylabel("Weight")
   plt.show()
-  
+  return all_h0
 
+prediction1 = linearRegression(x_train, y_train, 1000, theta, alpha)
 
+prediction2 = linearRegression(x_train, y_train, 10000, theta, alpha)
 
-linearRegression(iterations, theta, alpha)
+prediction3 = linearRegression(x_train, y_train, 100000, theta, alpha)
 
+"""# Predicción"""
+
+# Con más iteraciones, mayor la puntación de veracidad que tenemos en el modelo, sin embargo, no cambia por mucho
+# Se usa el último para las predicciones y comparación de entrada
+prediction4 = linearRegression(x_test, y_test, 100000, theta, alpha)
+
+"""## Comparación real vs predicción"""
+
+comp = pd.DataFrame(x_test)
+comp["Prediction"] = prediction4
+comp["Estimated"] = y_test
+comp
+
+"""# Comparación con librerías de sklearn"""
+
+# Separacion en X y Y
+xSK= df[["Width"]]
+
+ySK= df["Weight"]
+
+"""## Train"""
+
+# Modelo prueba 30% y entrenamiento 70%
+x_trainSK, x_testSK, y_trainSK, y_testSK = train_test_split(xSK, ySK, test_size = 0.3, random_state = 0)
+
+from sklearn.linear_model import LinearRegression
+lr = LinearRegression()
+lr.fit(x_trainSK,y_trainSK)
+
+"""## Test"""
+
+print("Linear regression Training Accuracy:",lr.score(x_trainSK, y_trainSK))
+
+lr.fit(x_testSK, y_testSK)
+print("Linear regression Training Accuracy:",lr.score(x_testSK, y_testSK))
